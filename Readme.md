@@ -1,10 +1,10 @@
-## Spring Security
+# Spring Security
  
-### 목차 
+## 목차 
 [1. 스프링 시큐리티 의존성 추가](#스프링-시큐리티-의존성이-추가되면-생기는-일) <br/>
 [2. WebSecurityConfigurerAdapter](#WebSecurityConfigurerAdapter) <br/>
 [3. HttpSecurity](#HttpSecurity) <br/>
-[4. http.formLogin()](#http.formLogin()) <br/>
+[4. http.formLogin()](#http-formLogin) <br/>
 [5. UsernamePasswordAuthenticationFilter](#UsernamePasswordAuthenticationFilter) <br/> 
 [6. FilterChainProxy](#FilterChainProxy) <br/>
 [7. Logout](#Logout) <br/>
@@ -24,7 +24,7 @@
 
 서버가 가동되면 스프링 시큐리티의 초기화 작업 및 보안설정이 이뤄진다.  
 
-별도의 설정이나 구현없이 기본적인 시큐리티 설정이 적용된다. 
+별도의 설정이나 구현없이 기본적인 시큐리티 설정이 적용된다. 특징은 다음과 같다. 
   - 모든 요청은 인증이 되야 한다.
   - 인증방식은 formLogin 방식과 httpBasic 로그인 방식이 제공된다. 
   - 기본 로그인 페이지가 제공된다. 
@@ -102,7 +102,7 @@
 
 ***
 
-## http.formLogin() 
+## http formLogin
 
 http.formLogin() 메소드를 통해 Form 로그인 인증 기능이 작동한다.
 
