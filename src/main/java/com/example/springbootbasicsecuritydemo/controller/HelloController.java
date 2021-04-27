@@ -16,4 +16,19 @@ public class HelloController {
     public String loginPage(){
         return "loginPage";
     }
+
+    @GetMapping("/admin/pay")
+    public String adminPay(){
+        return "adminPay";
+    }
+
+    @GetMapping("/admin/**")
+    public String admin(){
+        return "admin";
+    }
+
+    @GetMapping("/user")
+    public String user(){
+        return "user";
+    }
 }

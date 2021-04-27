@@ -11,6 +11,13 @@
 [8. LogoutFilter](#LogoutFilter) <br/>
 [9. RememberMe](#RememberMe) <br/> 
 [10. RememberMeAuthenticationFilter](#RememberMeAuthenticationFilter) <br/> 
+[11. AnonymousAuthenticationFilter](#AnonymousAuthenticationFilter) <br/> 
+[12. 동시 세션 제어](#동시-세션-제어) <br/> 
+[13. 세션 고정 보호](#세션-고정-보호) <br/> 
+[14. 세션 정책](#세션-정책) <br/> 
+[15. SessionManagementFilter](#SessionManagementFilter) <br/>
+[16. ConcurrentSessionFilter](#ConcurrentSessionFilter) <br/>
+[17. 권한설정과 표현식](#권한설정과-표현식) <br/> 
 ***
  
 ## 스프링 시큐리티 의존성이 추가되면 생기는 일 
@@ -208,6 +215,191 @@ Cookie에 토큰이 있더라도 정상적인 규격에 맞는 토큰인지 확�
 그 후 사용자의 토큰과 서버에 저장된 토큰이 일치하는지 비교한다. 이후에 이 User 정보를 바탕으로 DB에 User 계정이 존재하는지 확인하고 맞다면 Authentication 객체를 만들게 된다. 그 다음 AuthenticationManager에게 전달해줘서 마무리한다. 
 
 AbstractAuthenticationProcessingFilter.successfulAuthentication() 메소드에 있는 rememberMe.loginSuccess() 메소드를 통해서 사용자에게 전달하는 응답객체에 remember-me 쿠키를 만들어서 전달해주는 걸 볼 수 있다. 이 정보에 Authentication Username과 Password를 가지고 만든다. 
+
+***
+
+## AnonymousAuthenticationFilter
+
+익명 사용자 인증 필터로서 역할. 
+
+Security Conext안에 Authentication 객체가 존재하는 경우에는 다음 필터로 넘기지만 Authentication 객체가 null 일 경우 AnonymousAuthenticationToken을 Security Context에 넣어주는 역할을 한다. 즉 익명 사용자라고 할지라도 토큰을 가지게 한다. 이를 통해 SSR에서 인증 여부를 구현할 때 isAnouymous() 메소드와 isAuthenticated() 로 구분해서 사용하는게 가능하다. 
+
+AnonymousAuthenticationToken은 인증을 받은게 아니므로 세션에 저장하지는 않는다. 
+
+
+코드로 보면 다음과 같다. 
+
+```java
+// AnonymousAuthenticationFilter 
+@Override
+	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+			throws IOException, ServletException {
+		if (SecurityContextHolder.getContext().getAuthentication() == null) {
+			SecurityContextHolder.getContext().setAuthentication(createAuthentication((HttpServletRequest) req));
+			if (this.logger.isTraceEnabled()) {
+				this.logger.trace(LogMessage.of(() -> "Set SecurityContextHolder to "
+						+ SecurityContextHolder.getContext().getAuthentication()));
+			}
+			else {
+				this.logger.debug("Set SecurityContextHolder to anonymous SecurityContext");
+			}
+		}
+		else {
+			if (this.logger.isTraceEnabled()) {
+				this.logger.trace(LogMessage.of(() -> "Did not set SecurityContextHolder since already authenticated "
+						+ SecurityContextHolder.getContext().getAuthentication()));
+			}
+		}
+		chain.doFilter(req, res);
+	}
+
+```
+- 여기서 createAuthentication() 메소드를 보면 AnonymousAuthenticationToken을 만든다. 이 토큰을 바탕으로 Security Context에 넣어주는 역할을 AnonymousAuthenticationFilter가 한다. 
+
+
+*** 
+
+## 동시 세션 제어 
+
+동일한 계정으로 인증을 받을 때 세션에 기록되는데 이 개수를 어떻게 제어하는지에 대한 전략이다.
+
+전략은 크게 두개가 있다. 최대 세션 허용 개수가 1개라고 가정해보자.
+    
+  1. 이전 사용자 세션 만료
+     - 이는 첫번째 사용자가 인증을하고 세션을 만들고 두번째 사용자가 인증을 하면 새로운 세션이 만들어지고 첫번째 사용자의 세션을 만료시킨다. 
+  
+  2. 현재 사용자 인증 실패 
+     - 이는 첫번째 사용자가 인증을하고 세션을 만들고 두번째 사용자가 인증을 하면 인증 예외를 발생시킨다. 
+
+동시 세션 제어는 http.sessionManagement() 메소드를 통해 가능하다. 
+
+http.sessionManagement() 의 하위 API는 다음과 같다. 
+
+  - http.sessionManagement.maximumSessions(1) 을 통해 최대 허용 가능한 세션의 수를 설정할 수 있다. -1 값으로 설정하면 무제한 로그인 세션이 허용된다. 
+  - http.sessionManagement.maxSessionsPreventsLogin(true) 을 true 값을 통해 동시 로그인을 차단할 수 있다. false 로 설정하면 기존 세션이 만료되는 전략이다.
+  - http.sessionManagement.invalidSessionUrl("/invalid") 을 통해 세션이 유효하지 않을 때 이동 할 페이지를 설정할 수 있다.
+  - http.sessionManagement.expiredUrl("/expired") 설정을 통해 세션이 만료된 경우 이동 할 페이지를 설정할 수 있다. 
+
+***
+
+## 세션 고정 보호
+
+세션 고정 공격을 보호하기 위해 인증에 성공할 때마다 새로운 JSESSIONID를 발급해주는 방법이다. 
+
+이는 http.sessionManagement().sessionFixation().changeSessionId() 매소드를 통해 가능하다.
+  - 기본 전략으로 사용자의 세션은 그대로 두고 세션 ID만 바꾸는 방법이다. 
+
+또 다른 것으로는 http.sessionManagement.sessionFixation.migrateSession() 과 http.sessionManagement.sessionFixation.newSession() 이 있다
+  - 새로운 세션 ID를 생성하는 것은 동일하다. changeSessionId()와 migratesSession() 차이는 서블릿 버전에 따라서 다르다는 차이만 있다. migrateSession()은 이전의 세션에서 설정한 여러가지 값들을 재사용하는 걸 말하고 newSession()은 새로운 세션을 만드는 걸 말한다.  
+
+***
+
+## 세션 정책 
+
+세션 정책은 http.sessionManagement.sessionCreationPolicy(SessionCreationPolicy.If_Required) 메소드를 통해 가능하다.  
+  - SessionCreationPolicy.Always 을 통해 스프링 시큐리티가 항상 세션을 생성하도록 설정할 수 있다. 
+  - SessionCreationPolicy.If_Required 를 통해 스프링 시큐리티가 필요할 때 세션을 생성하도록 설정할 수 있다. 
+  - SessionCreationPolicy.Never 을 통해 스프링 시큐리티가 생성하지 않지만 이미 존재하면 사용하도록 할 수 있다. 
+  - SessionCreationPolicy.Stateless 을 통해 스프링 시큐리티가 생성하지 않고 존재해도 사용하지 않도록 할 수 있다. 예를 들면 JWT 토큰을 통해 사용할 때 이 정책을 사용하면 된다. 
+
+***
+
+## SessionManagementFilter
+
+하는 일은 크게 4가지가 있다.
+  - 세션 관리
+    - 인증 시 사용자의 세션정보를 등록, 조회, 삭제등의 세션 관리를 한다. 
+  - 동시적 세션 제어
+    - 동일 계정으로 접속할 때 허용되는 최대 세션 수를 설정하거나 전략을 설정할 수 있다. 
+  - 세션 고정 보호 
+    - 인증할 때마다 새로운 세션 Id를 발급하도록 해서 공격자의 쿠키 조작을 방지할 수 있도록 한다. 
+  - 세션 생성 정책 
+    - 다양한 세션 정책을 지원한다. (e.g Always, If_Required, Never, Stateless)
+
+***
+
+## ConcurrentSessionFilter
+
+매 요청 마다 현재 사용자의 세션 만료 여부를 체크한다. 만료되었을 경우 만료 처리를 하는데 로그아웃 처리를 하던가 오류페이지로 응답한다. 
+
+ConcurrentSessionFilter는 SessionManagement와 연계해서 동시적 세션 제어를 한다. 
+
+어떻게 연계하는지 살펴보자.
+  1. 이전 사용자가 인증을 하고 세션에 등록했다고 가정해보자. 
+  
+  2. 동일한 새로운 사용자가 와서 인증을 하면 SessionManagementFilter가 처리를 한다. 이때 최대 허용 가능한 세션이 초과했을 경우 동시적 세션 제어 전략에 따라서 다르겠지만 기본 전략인 이전 사용자 세션 만료 전략에 따라서 즉시 이전 세션을 만료시킨다. (sesion.expireNow()) 
+  
+  3. 그 후에 이전 사용자가 요청을 하면 ConcurrentSessionFilter 에서 처리를 하는데 session.isExpired() 메소드를 통해 요청마다 세션이 만료되었는지 검사하고 만료되었다면 Logout 처리를 하던가 오류 페이지로 보낸다. 
+  
+  이 과정을 SessionMangementFilter 클래스와 ConcurrentSessionFilter 클래스에서 연계해서 살펴보면 다음과 같다. 
+  
+  1. 처음 사용자가 인증을 할려고 Username과 Password를 입력하면 UsernamePasswordAuthenticationFilter가 세션 정보를 넣어주려고 처리를 한다. 이때 ConcurrentSessionControlAuthenticationStrategy 클래스라는 동시 세션 제어를 관리해주는 클래스에 요청을 해서 현재 이 사용자가 가지고 있는 세션의 개수를 조회하고 그 개수가 최대 허용 가능한 세션 개수보다 작은지 검사한다. 
+  
+  2. 이를 통과하면 ChangedSessionIdAuthenticationStrategy 클래스에서 session.changeSessionId() 메소드를 통해 세션 Id를 바꿔주는 메소드를 호출한다. 
+  
+  3. 그 후 RegisterSessionAuthenticationStarategy 클래스에서 세션 정보를 등록하고 UsernamePasswordAuthenticationFilter는 성공적으로 처리를 완료한다. 여기서 CompositeSessionAuthenticationStrategy는 ConcurrentSessionControlAuthenticationStrategy 클래스와 ChangedSessionIdAuthenticationStrategy 클래스, RegisterSessionAuthenticationStarategy 클래스를 포함한다.  
+  
+  4. 두번째 사용자가 같은 계정을 가지고 요청할려고 하면 동일하게 UsernamePasswordAuthenticationFilter 를 거치게 되고 ConcurrentSessionControlAuthenticationStrategy 에서 최대 허용 가능한 세션을 초과했는지 검사하게 된다. 이때 초과됐다면 동시 세션 전략에 따라서 인증 실패 예외인 SessionAuthenticationException을 내던가 session.expireNow() 메소드를 통해 이전 세션을 무효화 시킨다. 그 다음 처리는 처음 사용자와 동일하다. 
+  
+  5. 처음 사용자가 세션이 만료되었고 어떤 요청을 보내게 되면 이때 ConcurrentSessionFilter가 매 요청마다 세션이 만료되었는지 검사한다. (session.isExpired()) 만료 되었다면 로그아웃 하고 이를 처리할 페이지로 옮긴다.  
+
+***
+
+## 권한설정과 표현식 
+
+권한 설정은 선언적 방식과 동적 방식을 통해서 할 수 있다. 
+
+- 선언적 방식
+
+  - URL
+
+    - http 객체를 통해서 가능하다 - http.anyMatcher("/users/**").hasRole("USER")
+
+    - ```java
+      @Override
+      protected void configure(HttpSecurity http) throws Exception{
+        
+        http 
+          		.antMatcher("/shop/**")
+          		.authorizeRequest()
+          			.antMatchers("/shop/login","/shop/users/**").permitAll() // (1)
+          			.antMatchers("/shop/mypage").hasRole("USER") // (2)
+          			.antMatchers("/shop/admin/pay").access("hasRole('ADMIN')"); 
+        				.antMatchers("/shop/admin/**").access("hasRole('ADMIN') or hasRole('SYS')"); 
+        				.anyRequest().authenticated(); 
+      }
+      ```
+
+      - http.antMatcher() 를 통해서 보안이 적용할 경로를 설정할 수 있다. 이 부분을 생략하면 모든 부분에서 보안 검사를 실행하게 된다. 
+      - (1) 에서는 /shop/login 으로 오는 요청이나 /shop/users/ 이후에 오는 모든 요청은 다 허용하겠다 라는 뜻이다. 
+      - (2) 에서는 USER 권한을 가지고 있어야 접근이 가능하다 라는 뜻이다. 
+
+    - 인가 API 표현식은 다음과 같다. 
+
+      - authenticated() 를 통해 인증된 사용자의 접근을 허용할 수 있다.
+      - fullyAuthenticated() 를 통해 인증된 사용자의 접근을 허용하지만 rememberMe 인증은 제외할 수 있다.
+      - permitAll() 를 통해 어떤 사용자든 접근을 허용할 수 있다.
+      - denyAll() 를 통해 어떤 사용자든 접근을 막을 수 있다.
+      - anonymous() 를 통해 익명 사용자의 접근을 허용할 수 있다. (주의 USER 권한은 ANONYMOUS 권한의 상위 호환이 아니다. )
+      - rememberMe() 를 통해 이걸 통해서 인증된 사용자의 접근을 허용할 수 있다. 
+      - access() 를 통해 주어진 SpEL 표현식의 평가 결과가 true이면 접근을 허용할 수 있다. 
+      - hasRole() 를 통해 주어진 사용자가 이 권한이 있다면 허용할 수 있다.
+      - hasAuthority() 를 통해 사용자가 주어진 권한이 있다면 접근을 허용할 수 있다. 
+      - hasAnyRole() 를 통해 사용자가 주어진 권한들 중  어떤 것이라도 있다면 접근을 허용할 수 있다.
+      - hasAnyAuthority() 를 통해 사용자가 주어진 권한 중 어떤 것이라도 있다면 접근을 허용할 수 있다. 
+      - hasIpAddress() 를 통해 주어진 Ip로부터 요청이 있다면 접근을 허용할 수 있다. 
+
+  - Method
+
+    - 메소드 위에 에노테이션을 통해서 가능하다. - @PreAuthorize("hasRole('USER')")
+
+- 동적 방식 
+
+  - URL 방식과 Method 방식이 있지만 이는 DB 연동을 통해서 한다. 
+
+
+
+
 
 
 
