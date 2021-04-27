@@ -4,7 +4,7 @@
 [1. 스프링 시큐리티 의존성 추가](#스프링-시큐리티-의존성이-추가되면-생기는-일) <br/>
 [2. WebSecurityConfigurerAdapter](#WebSecurityConfigurerAdapter) <br/>
 [3. HttpSecurity](#HttpSecurity) <br/>
-[4. http.formLogin()](#http.formLogin) <br/>
+[4. http.formLogin()](#http-formLogin) <br/>
 [5. UsernamePasswordAuthenticationFilter](#UsernamePasswordAuthenticationFilter) <br/> 
 [6. FilterChainProxy](#FilterChainProxy) <br/>
 [7. Logout](#Logout) <br/>
@@ -95,7 +95,7 @@
 
 ***
 
-## http.formLogin
+## http formLogin
 
 http.formLogin() 메소드를 통해 Form 로그인 인증 기능이 작동한다.
 
