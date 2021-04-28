@@ -440,8 +440,7 @@ RequestCacheAwareFilter 는 세션에 SavedRequest가 저장되어 있는지 확
 CSRF란 서버로부터 인증을 하고 쿠키를 받은 사용자를 통해 대신 요청을 보내도록 하는 기법이다. 사용자는 공격자로부터 메일을 받던지 해서 공격자의 사이트로 이동하게 되고 공격자의 사이트에는 서버로 요청을 보내도록 설정되어 있다. 사용자는 이 사이트에서 행동을 하면 서버로부터 신뢰할 수 있는 쿠키 정보를 바탕으로 공격자 대신 요청 정보를 보내게 된다. 이는 사용자의 의도와는 무관하다. 
 
 스프링 시큐리티는 이 CSRF 공격을 막기위한 CsrfFilter를 제공해준다. 해결 방법은 처음 요청부터 모든 요청까지 랜덤하게 생성된 토큰을 HTTP 피라미터로 사용자에게 전달해주고 매 요청마다 이 토큰 값을 가지고 와야한다.
- - 이 토큰 값은 클라이언트에서 이런식으로 전송된다. 
- - <input type="hidden" name="${_csrf.parameterName}" value="${__csrf.token}" />
+ - 이 토큰 값은 클라이언트에서 이런식으로 전송된다. <input type="hidden" name="${_csrf.parameterName}" value="${__csrf.token}" />
  - HTTP PATCH, POST, PUT, DELETE 같은 메소드들은 이 토큰을 항상 첨부해야한다. 
  - Csrf Token을 꺼내올땐 HttpServletRequest 객체의 getHeader("X-CSRF-TOKEN") 메소드를 통해서 꺼내오거나    HttpServletRequest 객체의 getParameter("_csrf") 메소드를 통해서 꺼내온다. 이 정보가 서버에 있는 정보와 같은지 비교해서 판단한다.  
 
