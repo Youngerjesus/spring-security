@@ -31,4 +31,15 @@ public class HelloController {
     public String user(){
         return "user";
     }
+
+    @GetMapping("/login")
+    public String login(){
+        return "login";
+    }
+
+    @GetMapping("/denied")
+    public String denied(){
+        return "denied";
+    }
+
 }

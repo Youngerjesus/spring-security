@@ -17,7 +17,10 @@
 [14. 세션 정책](#세션-정책) <br/> 
 [15. SessionManagementFilter](#SessionManagementFilter) <br/>
 [16. ConcurrentSessionFilter](#ConcurrentSessionFilter) <br/>
-[17. 권한설정과 표현식](#권한설정과-표현식) <br/> 
+[17. 권한설정과 표현식](#권한설정과-표현식) <br/>
+[18. ExceptionTranslationFilter](#ExceptionTranslationFilter) <br/>
+[19. RequestCacheAwareFilter](#RequestCacheAwareFilter) <br/>
+[20. CsrfFilter](#CsrfFilter) <br/> 
 ***
  
 ## 스프링 시큐리티 의존성이 추가되면 생기는 일 
@@ -397,7 +400,52 @@ ConcurrentSessionFilter는 SessionManagement와 연계해서 동시적 세션 �
 
   - URL 방식과 Method 방식이 있지만 이는 DB 연동을 통해서 한다. 
 
+***
 
+## ExceptionTranslationFilter 
+
+이 필터는 크게 두가지 종류의 예외를 처리한다. AuthenticationException 과 AccessDeniedException 예외 이 예외들은 FilterChain의 가장 마지막에 있는 FilterSecurityInterceptor 가 발생시킨다. FilterSecurityInterceptor 앞에 있는 Filter가 바로 ExceptionTranslationFilter 이다. ExceptionTranslationFilter 가 다음 필터를 호출할 때 FilterSecurityInterceptor 를 try-catch로 감싸고 있고 이를 통해 FilterSecurityInterceptor 가 던진 예외를 처리한다. 
+
+AuthenticationException
+  - 스프링이 제공하는 AuthenticationEntryPoint 인터페이스 구현체를 호출한다. 이를 통해 로그인 페이지로 이동하던가 401 권한 없음 오류 코드를 전달할 수 있다. AuthenticationEntryPoint 인터페이스를 사용자가 정의한 구현체를 쓸 수도 있다. 
+
+  - 인증 예외가 발생하기 전의 요청 정보를 저장할 수 있다. 이게 무슨 뜻이냐면 권한이 있는 리소스에 접근을 하고자 하는데  인증이 안되있다면 AuthenticationEntryPoint 의 처리에 따라서 로그인 페이지로 이동하게 된다. 이때 이전에 요청했던 정보를 캐싱하고 있다가 인증을 하고나서 다시 재요청을 하도록 한다. RequestCache 클래스를 통해 세션에 저장된 사용자의 이전 요청 정보를 꺼내오는 방법을 쓸 수 있다. 이때 꺼내오는 객체가 SavedRequest 클래스 타입인데   여기에는 사용자가 요청했던 request 파라미터 값들과 그 당시의 헤더값들이 저장된다.  
+
+AccessDeniedException
+  - 권한이 없을때 발생하는 예외로 AccessDeniedHandler 에서 예외를 처리하도록 할 수 있다. 
+
+처리 플로우는 다음과 같다. 
+  1. 인증을 하지 않는 사용자가 권한이 있어야 접근할 수 있는 리소스에 요청을 했다. 이때 FilterSecurityInterceptor가 인가 예외를 던진다. 인증 예외가 아닌 이유는 익명 사용자의 경우에도 AuthenticationToken이 생기기 떄문이다. 
+  
+  2. 이를 통해 ExceptionTranslationFilter가 AccessDeniedException 예외를 처리하는데 익명 사용자의 요청이나 RememberMe 인증인 경우에는 AccessDeniedHandler 를 호출하는게 아니라 인증 예외 처리에서 실행하는 흐름대로 처리한다.
+  
+  3. 그러므로 AuthenticationEntryPoint 에서 response.redirect('/login') 으로 페이지를 이동시키고 요청 정보를 세션에 저장한다 이때 DefaultSavedReqeust 객체로 저장된다. 세션에 저장하도록 하는 역할은 HttpSessionRequestCache 가 한다. 
+
+
+http.exceptionHandling() 메소드를 통해 예외처리 기능이 작동하도록 할 수 있다. 
+  - http.exceptionHandling.authenticationEntryPoint(authenticationEntryPoint()) 메소드를 통해 인증 실패시 처리할 핸들러를 등록할 수 있다.
+  
+  - http.exceptionHandling.accessDeniedHandler(accessDeniedHandler()) 메소드를 통해 인가 실패시 처리할 핸들러를 등록할 수 있다.  
+
+***
+
+## RequestCacheAwareFilter 
+
+RequestCacheAwareFilter 는 세션에 SavedRequest가 저장되어 있는지 확인하는 필터다. 
+
+***
+
+## CsrfFilter 
+
+CSRF란 서버로부터 인증을 하고 쿠키를 받은 사용자를 통해 대신 요청을 보내도록 하는 기법이다. 사용자는 공격자로부터 메일을 받던지 해서 공격자의 사이트로 이동하게 되고 공격자의 사이트에는 서버로 요청을 보내도록 설정되어 있다. 사용자는 이 사이트에서 행동을 하면 서버로부터 신뢰할 수 있는 쿠키 정보를 바탕으로 공격자 대신 요청 정보를 보내게 된다. 이는 사용자의 의도와는 무관하다. 
+
+스프링 시큐리티는 이 CSRF 공격을 막기위한 CsrfFilter를 제공해준다. 해결 방법은 처음 요청부터 모든 요청까지 랜덤하게 생성된 토큰을 HTTP 피라미터로 사용자에게 전달해주고 매 요청마다 이 토큰 값을 가지고 와야한다.
+ - 이 토큰 값은 클라이언트에서 이런식으로 전송된다. 
+ - <input type="hidden" name="${_csrf.parameterName}" value="${__csrf.token}" />
+ - HTTP PATCH, POST, PUT, DELETE 같은 메소드들은 이 토큰을 항상 첨부해야한다. 
+ - Csrf Token을 꺼내올땐 HttpServletRequest 객체의 getHeader("X-CSRF-TOKEN") 메소드를 통해서 꺼내오거나    HttpServletRequest 객체의 getParameter("_csrf") 메소드를 통해서 꺼내온다. 이 정보가 서버에 있는 정보와 같은지 비교해서 판단한다.  
+
+스프링 시큐리티에서는 기본적으로 http.csrf() 가 활성화되어 있다. http.csrf().disabled() 를 통해 비활성화 할 수 있다. 비활성화 하고나서 FilterChainProxy의 additionalFilters 에서 FilterChain 리스트를 보면 CsrfFilter 가 없는걸 볼 수 있다. 
 
 
 
