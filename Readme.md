@@ -32,7 +32,7 @@
   - 인증방식은 formLogin 방식과 httpBasic 로그인 방식이 제공된다. 
   - 기본 로그인 페이지가 제공된다. 
   - 기본 계정도 한 개 제공된다. 
-  - 
+
 *** 
 
 ## WebSecurityConfigurerAdapter
