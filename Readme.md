@@ -25,7 +25,7 @@
 [22. 필터 초기화와 다중 설정 클래스](#필터-초기화와-다중-설정-클래스) <br/> 
 [23. Authentication](#Authentication) <br/> 
 [24. SecurityContextHolder](#SecurityContextHolder) <br/> 
-
+[25. SecurityContextPersistenceFilter](#SecurityContextPersistenceFilter) <br/> 
 ***
  
 ## 스프링 시큐리티 의존성이 추가되면 생기는 일 
