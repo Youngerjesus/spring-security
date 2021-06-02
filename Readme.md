@@ -531,7 +531,9 @@ SecurityContext 는 Authentication 객체가 보관되는 장소로 필요하면
 ThreadLocal 에 저장되어 있기 때문에 아무곳에서나 참조가 가능하다. (ThreadLocal 은 Scope 단위로 변수를 저장하는게 아니라 스레드 단위로 변수를 저장할 수 있다. 이를 통해서 전역 참조가 가능하다)
 (이는 스레드 전역 저장소로 다른 스레드에서 접근이 불가능하다. 그러므로 Thread-Safe 하다.)
 
-SecurityContextHolder 는 SecurityContext 를 감싸고 있으며 이 방식은 다음과 같다.
+SecurityContextHolder 는 SecurityContext 를 감싸고 있으며 감싸는 이유는 다양한 전략으로 SecurityContext 를 감쌀 수 있어서이다. 
+
+감싸는 방식은 다음과 같다. 
 
 - MODE_THREADLOCAL: 스레드당 SecurityContext 객체를 할당한다.  
 
@@ -547,4 +549,26 @@ ThreadLocal 에 저장을 한 후 인증이 완료되면 HttpSession 에 저장�
  
 그리고 SecurityContextHolder.clearContext() 를 통해서 초기화가 가능하다. (이는 인증에 실패하면 일어난다. 성공하면 SecurityContext 에 Authentication 을 넣어준다.) 
 
-전략을 바꾸고 싶다면 SecurityContextHolder.setStrategyName() 을 통해서 가능하다.  
+전략을 바꾸고 싶다면 SecurityContextHolder.setStrategyName() 을 통해서 가능하다.
+
+
+## SecurityContextPersistenceFilter 
+
+이 필터는 SecurityContext 객체를 생성하고 저장하고 조회하는 필터이다.
+
+인증 전이면 HttpSecurityContextRepository 를 통해 새로운 SecurityContext 를 생성하고 이를 SecurityContextHolder 에 저장한다.  
+
+그 후 인증 필터를 통해 인증을 하고 이를 통해 SecurityContext 에 Authentication 객체를 넣어준다. 
+
+예로 익명 사용자의 요청의 경우에는 새로운 SecurityContext 를 생성하고 이를 SecurityContextHodler 에 저장하고  
+
+그 후 AnonymousAuthenticationFilter 에서 AnonymousAuthenticationToken 을 이 SecurityContext 에 저장한다. 
+
+인증을 하는 경우에는 (예로 폼을 들면) 새로운 SecurityContext 를 만들고 이를 Holder 에 넣어준다. 그 후 UsernamePasswordAuthenticationFilter 에서 UsernamePasswordAuthenticationToken 을 SecurityContext 에 저장해준다. 
+
+그 후 최종 완료에는 Session 에 SecurityContext 를 저장한다. 
+
+인증 후에는 새로운 SecurityContext 를 생성하지 않고 Session 에서 꺼내서 SecurityContextHolder 에 넣어준다. 
+  
+
+  
