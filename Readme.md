@@ -20,7 +20,10 @@
 [17. 권한설정과 표현식](#권한설정과-표현식) <br/>
 [18. ExceptionTranslationFilter](#ExceptionTranslationFilter) <br/>
 [19. RequestCacheAwareFilter](#RequestCacheAwareFilter) <br/>
-[20. CsrfFilter](#CsrfFilter) <br/> 
+[20. CsrfFilter](#CsrfFilter) <br/>
+[21. DelegatingFilterProxy](#DelegatingFilterProxy) <br/>
+[22. 필터 초기화와 다중 설정 클래스](#필터-초기화와-다중-설정-클래스) <br/> 
+ 
 ***
  
 ## 스프링 시큐리티 의존성이 추가되면 생기는 일 
