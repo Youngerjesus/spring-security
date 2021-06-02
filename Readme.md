@@ -23,7 +23,8 @@
 [20. CsrfFilter](#CsrfFilter) <br/>
 [21. DelegatingFilterProxy](#DelegatingFilterProxy) <br/>
 [22. 필터 초기화와 다중 설정 클래스](#필터-초기화와-다중-설정-클래스) <br/> 
- 
+[23. Authentication](#Authentication) <br/> 
+
 ***
  
 ## 스프링 시큐리티 의존성이 추가되면 생기는 일 
@@ -477,4 +478,46 @@ FilterChainProxy 는 사용자의 요청을 보고 각 URL 와 매치가 되는 
 여러개의 Security Config 파일을 만들어서 사용할려면 @Order 에노테이션이 필요하다. 
 
 
+***
 
+## Authentication
+
+Authentication 은 인증을 말하며 내가 누구인지를 증명하는 걸 말한다. 
+
+스프링 시큐리니는 이런 인증을 토큰 개념으로 설면하는데 인증시 id 와 password 를 담고 인증 검증을 위해 전달되어서 사용한다.
+
+인증 후 최종 인증 결과는 Security Context 에 저장되어서 전역적으로 참조가 가능하다. 
+
+Authentication authentication = SecurityContextHolder.getContext().getAuthentication() 메소드를 통해 인증 객체를 참조하는게 가능하다. 
+
+Authentication 인터페이스의 구현체로는 UsernamePasswordAuthenticationToken 과 AnonymousAuthenticationToken, RememberMeAuthenticationToken, TestingAuthenticationToken 등이 있다. 
+
+물론 직접 이 인터페이스를 구현한 토큰을 만들수도 있다. 
+
+Authentication 인터페이스 구조는 다음과 같은 정보를 포함하고 있다.
+
+- principle: 사용자 아이디 혹은 User 객체를 저장한다. (자바에서 제공하는 인터페이스다.)
+
+- credentials: 사용자 비밀번호를 말한다.
+
+- authorities: 인증된 사용자의 권한 목록을 말한다.
+
+- details: 인증 부가 정보를 말한다.
+
+- Authenticated: 인증 여부를 말한다.  
+
+Username 과 Password 를 통한 인증 플로우는 다음과 같다.
+
+- 1. UsernamePasswordAuthenticationFilter 에서 유저가 전달한 정보를 바탕으로 Authentication 객체를 만든다. (이때 만드는 객체는 UsernamePasswordAuthenticationToken 이다.) 
+
+  - 이 객체에 Principle 에는 Username 이 들어가고 Credential 에는 비밀번호가 들어가고 Authenticated 는 false 가 들어간다.
+  
+- 2. 인증 검증을 위해 이 Authentication 객체는 AuthenticationManager 에게 전달되고 인증 검증을 거친다. (AuthenticationManager 의 authenticate() 메소드를 통해 인증 검증을 거친다.)
+AuthenticationManager 는 AuthenticationProvider 에게 이 작업을 위임한다. 
+
+- 3. 인증이 실패하게 되면 인증 실패에 대한 예외가 발생하고 이를 처리하지만 인증에 성공하면 Authentication 객체에 Principle 에는 UserDetail 정보가 담기게 되고
+Authorities 정보도 담기게 되고 Authenticated 는 true 가 된다.
+
+- 4. 최종 Authentication 객체는 SecurityContext 에 저장되게 된다. 이를 통해 인증 객체를 전역적으로 사용하는게 가능해진다. 
+
+ 

@@ -52,17 +52,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .failureUrl("/login")
                 .usernameParameter("user")
                 .passwordParameter("passwd")
-                .successHandler(new AuthenticationSuccessHandler() {
-                    @Override
-                    public void onAuthenticationSuccess(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Authentication authentication) throws IOException, ServletException {
-                        // 인증이 실패하고 다시 성공한 경우 이 핸들러에서 이전 요청의 정보를 바탕으로 처리할 수 있다.
-                        System.out.println("authentication: " +authentication.getName());
-                        RequestCache requestCache = new HttpSessionRequestCache();
-                        SavedRequest savedRequest = requestCache.getRequest(httpServletRequest, httpServletResponse);
-                        String redirectUrl = savedRequest.getRedirectUrl();
-                        httpServletResponse.sendRedirect(redirectUrl);
-                    }
-                })
+//                .successHandler(new AuthenticationSuccessHandler() {
+//                    @Override
+//                    public void onAuthenticationSuccess(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Authentication authentication) throws IOException, ServletException {
+//                        // 인증이 실패하고 다시 성공한 경우 이 핸들러에서 이전 요청의 정보를 바탕으로 처리할 수 있다.
+//                        System.out.println("authentication: " +authentication.getName());
+//                        RequestCache requestCache = new HttpSessionRequestCache();
+//                        SavedRequest savedRequest = requestCache.getRequest(httpServletRequest, httpServletResponse);
+//                        String redirectUrl = savedRequest.getRedirectUrl();
+//                        httpServletResponse.sendRedirect(redirectUrl);
+//                    }
+//                })
                 .failureHandler(new AuthenticationFailureHandler() {
                     @Override
                     public void onAuthenticationFailure(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
