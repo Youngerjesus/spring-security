@@ -444,7 +444,34 @@ CSRF란 서버로부터 인증을 하고 쿠키를 받은 사용자를 통해 �
 
 스프링 시큐리티에서는 기본적으로 http.csrf() 가 활성화되어 있다. http.csrf().disabled() 를 통해 비활성화 할 수 있다. 비활성화 하고나서 FilterChainProxy의 additionalFilters 에서 FilterChain 리스트를 보면 CsrfFilter 가 없는걸 볼 수 있다. 
 
+***
 
+## DelegatingFilterProxy
+
+처음 요청을 받고 필터 처리를 하는 서블릿 필터는 스프링 컨테이너 기반의 필터가 아니다. 그러므로 스프링에서 정의된 빈을 주입해서 사용하는게 불가능하다. 
+
+그러므로 특정한 이름을 가진 스프링 빈을 찾아서 그 빈에게 요청을 처리해줘야한다. 그래야지 스프링 기반의 필터 처리를 해줄 수 있다. 
+
+- springSecurityFilterChain 이라는 이름을 가진 빈을 ApplicationContext 에서 찾아서 위임해준다. 그러므로 Servlet Filter 는 필터처리를 해주지 않는다.
+
+스프링에서 FilterChainProxy 는 DelegatingFilterProxy 로 부터 요청을 위임받고 실제 보안처리를 해주는 스프링 빈이다. 여기서는 필터들을 관리하고 제어해주는 역할을 한다.
+
+- 이는 스프링 시큐리티가 기본적으로 생성해주는 필터들을 관리해줄 수도 있지만 우리가 정의한 설정 클래스에서 추가한 필터들도 관리해준다. 
+
+- FilterChainProxy 에서 필터를 순서대로 호출하면서 처리를 하고 마지막 필터까지 인증/인가 예외가 발생하지 않으면 보안이 통과하게 된다. 
+
+***
+
+## 필터 초기화와 다중 설정 클래스 
+
+WebSecurityConfigurerAdapter (우리가 직접 설정한 SecurityConfig) 에서 설정한 정보인 RequestMatcher 와 보안 설정 그리고 필터 정보를 기반으로 SecurityFilterChain 이 생성되고 이는 FilterChainProxy 에 등록된다.
+
+이는 WebSecurity 클래스에서 FilterChainProxy 에 등록시켜 준다. 
+FilterChainProxy 가 각 필터를 가지고 있고 요청에 따라 RequestMatcher 와 매칭되는 필터가 작동한다. 
+
+FilterChainProxy 는 사용자의 요청을 보고 각 URL 와 매치가 되는 SecurityFilterChain 을 선택하고 이를 적용시킨다. 
+
+여러개의 Security Config 파일을 만들어서 사용할려면 @Order 에노테이션이 필요하다. 
 
 
 
