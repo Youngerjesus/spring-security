@@ -24,6 +24,7 @@
 [21. DelegatingFilterProxy](#DelegatingFilterProxy) <br/>
 [22. 필터 초기화와 다중 설정 클래스](#필터-초기화와-다중-설정-클래스) <br/> 
 [23. Authentication](#Authentication) <br/> 
+[24. SecurityContextHolder](#SecurityContextHolder) <br/> 
 
 ***
  
@@ -520,4 +521,30 @@ Authorities 정보도 담기게 되고 Authenticated 는 true 가 된다.
 
 - 4. 최종 Authentication 객체는 SecurityContext 에 저장되게 된다. 이를 통해 인증 객체를 전역적으로 사용하는게 가능해진다. 
 
+
+***
+
+## SecurityContextHolder
+
+SecurityContext 는 Authentication 객체가 보관되는 장소로 필요하면 전역적으로 Authentication 객체를 꺼내어 쓸 수 있도록 설계된 클래스다.
+
+ThreadLocal 에 저장되어 있기 때문에 아무곳에서나 참조가 가능하다. (ThreadLocal 은 Scope 단위로 변수를 저장하는게 아니라 스레드 단위로 변수를 저장할 수 있다. 이를 통해서 전역 참조가 가능하다)
+(이는 스레드 전역 저장소로 다른 스레드에서 접근이 불가능하다. 그러므로 Thread-Safe 하다.)
+
+SecurityContextHolder 는 SecurityContext 를 감싸고 있으며 이 방식은 다음과 같다.
+
+- MODE_THREADLOCAL: 스레드당 SecurityContext 객체를 할당한다.  
+
+- MODE_INHERITABLETHREADLOCAL: 메인 스레드와 자식 스레드에 관해서 동일한 SecurityContext 를 유지한다. 원래는 자식 스레드와 메인 스레드는 각각 별도의 ThreadLocal 을
+가질 것이고 기본 전략은 Main 스레드에만 SecurityContext 를 유지하는 것이다. 
+
+- MODE_GLOBAL: 응용 프로그램에서 단 하나의 SecurityContext 를 저장한다. 이 방식은 Thread Local 이 아니라 Static 변수에다가 저장하는 것이다.   
+
+ThreadLocal 에 저장을 한 후 인증이 완료되면 HttpSession 에 저장되서 어플리케이션 전반에 걸친 전역적인 참조가 가능해진다. 
+
+왜 이렇게 하냐면 Thread 자체는 많은 사용자 요청을 처리할 수 있다. 그러므로 HttpSession 에 있다가 요청이 들어오면 Thread 에서 SecurityContext 를 복사하고 
+그 후 요청이 마무리 되면 다시 HttpSession 에 넣도록 하는 것 HttpSession 을 바로 이용하지 않는 것은 WebServer 마다 약간씩 다 다르기도 하고 글로벌해서 Thread-Safe 하지도 않다. 
  
+그리고 SecurityContextHolder.clearContext() 를 통해서 초기화가 가능하다. (이는 인증에 실패하면 일어난다. 성공하면 SecurityContext 에 Authentication 을 넣어준다.) 
+
+전략을 바꾸고 싶다면 SecurityContextHolder.setStrategyName() 을 통해서 가능하다.  
