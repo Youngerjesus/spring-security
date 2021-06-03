@@ -1,5 +1,7 @@
 package com.example.springbootbasicsecuritydemo.config;
 
+import com.example.springbootbasicsecuritydemo.provider.CustomAuthProvider;
+import com.example.springbootbasicsecuritydemo.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -35,10 +37,15 @@ import java.io.IOException;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
-    UserDetailsService userDetailsService;
+    CustomAuthProvider customAuthProvider;
+
+    @Autowired
+    CustomUserDetailsService customUserDetailsService;
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(customAuthProvider);
+        auth.userDetailsService(customUserDetailsService);
         auth.inMemoryAuthentication().withUser("user").password("{noop}1234").roles("USER");
         auth.inMemoryAuthentication().withUser("sys").password("{noop}1234").roles("SYS");
         auth.inMemoryAuthentication().withUser("admin").password("{noop}1234").roles("ADMIN","SYS","USER");
@@ -94,8 +101,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .rememberMe()
                 .rememberMeParameter("remember")
-                .tokenValiditySeconds(3600)
-                .userDetailsService(userDetailsService);
+                .tokenValiditySeconds(3600);
 
         http
                 .sessionManagement()

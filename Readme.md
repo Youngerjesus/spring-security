@@ -27,7 +27,8 @@
 [24. SecurityContextHolder](#SecurityContextHolder) <br/> 
 [25. SecurityContextPersistenceFilter](#SecurityContextPersistenceFilter) <br/>
 [26. Authentication Flow](#Authentication-Flow) <br/> 
- 
+[27. AuthenticationManager](#AuthenticationManager) <br/> 
+
 ***
  
 ## 스프링 시큐리티 의존성이 추가되면 생기는 일 
@@ -602,5 +603,20 @@ AuthenticationManager 는 이 반환받은 Authentication 객체를 필터에게
     
 AbstractUserDetailsAuthenticationProvider 를 보면 retrieveUser() 메소드를 통해 UserDetails 타입의 객체를 가져오고  이 객체 또는 이 객체의 Username 이 Principle 이 된다.
 
+***
+
+## AuthenticationManager
+
+이 클래스는 필터로부터 인증 처리 지시를 받는 역할을 한다. 
+
+AuthenticationManager 인터페이스의 구현체는 ProviderManager 이다. 
+
+ProviderManager 는 AuthenticationProvider 리스트에서 확인을 하면서 인증 처리 요건에 맞는 AuthenticationProvider 를 찾아서 인증 처리를 위임한다.
+
+AuthenticationProvider 는 자신이 처리할 수 있는 Authentication 이 맞다면 인증 처리를 시작한다. 
+
+AuthenticationManager 는 현재 인증을 처리할 수 있는 AuthenticationProvider 를 찾을 수 없다면 부모 AuthenticationManager 에게 이를 처리해달라고 요청을 한다. 
+
+ 
 
   
