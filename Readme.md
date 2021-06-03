@@ -25,7 +25,9 @@
 [22. 필터 초기화와 다중 설정 클래스](#필터-초기화와-다중-설정-클래스) <br/> 
 [23. Authentication](#Authentication) <br/> 
 [24. SecurityContextHolder](#SecurityContextHolder) <br/> 
-[25. SecurityContextPersistenceFilter](#SecurityContextPersistenceFilter) <br/> 
+[25. SecurityContextPersistenceFilter](#SecurityContextPersistenceFilter) <br/>
+[26. Authentication Flow](#Authentication-Flow) <br/> 
+ 
 ***
  
 ## 스프링 시큐리티 의존성이 추가되면 생기는 일 
@@ -551,6 +553,7 @@ ThreadLocal 에 저장을 한 후 인증이 완료되면 HttpSession 에 저장�
 
 전략을 바꾸고 싶다면 SecurityContextHolder.setStrategyName() 을 통해서 가능하다.
 
+***
 
 ## SecurityContextPersistenceFilter 
 
@@ -560,7 +563,7 @@ ThreadLocal 에 저장을 한 후 인증이 완료되면 HttpSession 에 저장�
 
 그 후 인증 필터를 통해 인증을 하고 이를 통해 SecurityContext 에 Authentication 객체를 넣어준다. 
 
-예로 익명 사용자의 요청의 경우에는 새로운 SecurityContext 를 생성하고 이를 SecurityContextHodler 에 저장하고  
+예로 익명 사용자의 요청의 경우에는 새로운 SecurityContext 를 생성하고 이를 SecurityContextHolder 에 저장하고  
 
 그 후 AnonymousAuthenticationFilter 에서 AnonymousAuthenticationToken 을 이 SecurityContext 에 저장한다. 
 
@@ -570,5 +573,34 @@ ThreadLocal 에 저장을 한 후 인증이 완료되면 HttpSession 에 저장�
 
 인증 후에는 새로운 SecurityContext 를 생성하지 않고 Session 에서 꺼내서 SecurityContextHolder 에 넣어준다. 
   
+***
+
+## Authentication Flow 
+
+사용자가 인증을 하는 전체적인 처리 과정을 살펴보자. 
+
+인증을 하는 필터는 유저가 요청한 정보를 바탕으로 Authentication 객체를 만들고 이를 AuthenticationManger 에게 전달한다.  
+ 
+AuthenticationManger 는 실제적인 인증 처리를 AuthenticationProvider 에게 위임을 한다. 
+
+AuthenticationManager 는 AuthenticationProvider 를 List 형태로 가지고 있고 인증을 할 때 이것들 중에서 하나씩 꺼내면서 Authentication 을 지원하는 Prodiver 인지 확인하고
+이게 맞다면 이 Provider 가 인증처리를 하는 구조다.  
+
+AuthenticationProvider 는 실제적인 유저 정보를 기반으로(Id 와 Password 정보) 인증 검증을 한다. 
+
+유저가 요청한 정보와 실제 정보 (예를 들면 DB에 있는 유저 정보)와 비교를 해야한다. 이런 유저 정보를 가지고 오는 일은 AuthenticationProvider 의 retrieveUser() 메소드 안에서 UserDetailsService 의 loadUserByUsername(username) 메소드를 통해서 이뤄진다.
+
+여기서 유저 정보를 찾을 수 없는 예외가 발생하면 이 작업을 시작한 필터에서 (여기선 UsernamePasswordAuthenticationFilter) 실패 핸들러를 호출해서 처리한다. 
+
+성공하면 UserDetails 객체를 UserDetailsService 가 가져오고 추가적인 인증 검사를 한다. 
+
+UserDetails 가 만료가 되었거나 Password 와 비교해서 검증을 한다. 이때 Password 가 맞지 않다면 BadCredentialException 예외가 발생한다. 
+ 
+최종적으로 인증을 성공하면 UserDetails 정보와 UserDetails 에 있는 Authorities 정보를 바탕으로 Authentication 객체를 새로 만들어서 반환한다.
+
+AuthenticationManager 는 이 반환받은 Authentication 객체를 필터에게 전달해주고 Filter 는 이를 SecurityContext 에 저장한다. 
+    
+AbstractUserDetailsAuthenticationProvider 를 보면 retrieveUser() 메소드를 통해 UserDetails 타입의 객체를 가져오고  이 객체 또는 이 객체의 Username 이 Principle 이 된다.
+
 
   
