@@ -232,6 +232,8 @@ RememberMe는 http.rememberMe() 를 통해 가능하다.
 
 하지만 RememberMe 토큰을 가지고 있게 된다면 서버에서 이 정보를 바탕으로 디코딩하고 파싱해서 유저 정보를 만들고  인증 객체를 만들어서 다시 세션을 만들어준다. 
 
+- RememberMe 토큰에는 기본적으로 ExpirationTime 과 Username, MD5 Hash 값이 들어있게 된다. 
+
 ***
 
 ## RememberMeAuthenticationFilter
