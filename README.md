@@ -58,9 +58,9 @@
 
 - [AuthenticationProvider](#AuthenticationProvider)
 
-- [인가 개념 및 필터 이해:Authorization, FilterSecurityInterceptor](#인가-개념-및-필터-이해:Authorization,-FilterSecurityInterceptor)
+- [인가 개념 및 필터 이해:Authorization, FilterSecurityInterceptor](#인가-개념-및-필터-이해:Authorization-FilterSecurityInterceptor)
 
-- [인가 결정 심의자: AccessDeniedManager, AccessDecisionVoter](#인가-결정-심의자:-AccessDeniedManager,-AccessDecisionVoter)
+- [인가 결정 심의자: AccessDeniedManager, AccessDecisionVoter](#인가-결정-심의자:-AccessDeniedManager-AccessDecisionVoter)
 
 ***
  
@@ -683,7 +683,7 @@ AuthenticationManager 에게 위임받아서 실제적인 인증처리를 하는
 
 ***
 
-## 인가 개념 및 필터 이해:Authorization, FilterSecurityInterceptor 
+## 인가 개념 및 필터 이해:Authorization FilterSecurityInterceptor 
 
 Authorization 은 인가를 말한다. 
 
@@ -734,7 +734,7 @@ FilterSecurityInterceptor 가 처리하는 플로우는 다음과 같다.
 
 ***
 
-## 인가 결정 심의자: AccessDeniedManager, AccessDecisionVoter
+## 인가 결정 심의자: AccessDeniedManager AccessDecisionVoter
 
 AccessDecisionManager 는 인증정보, 권한정보, 요청정보를 이용해서 사용자의 자원 접근을 허용할 것인지 거부할 것인지 최종적으로 판단하는 클래스다. 
 
