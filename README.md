@@ -56,6 +56,8 @@
 
 - [AuthenticationManager](#AuthenticationManager) 
 
+- [AuthenticationProvider](#AuthenticationProvider)
+
 ***
  
 ## 스프링 시큐리티 의존성이 추가되면 생기는 일 
@@ -647,5 +649,30 @@ AuthenticationProvider 는 자신이 처리할 수 있는 Authentication 이 맞
 AuthenticationManager 는 현재 인증을 처리할 수 있는 AuthenticationProvider 를 찾을 수 없다면 부모 AuthenticationManager 에게 이를 처리해달라고 요청을 한다. 
 
  
+***
 
-  
+## AuthenticationProvider
+
+인증처리를 하는 가장 핵심적인 클래스. 
+
+AuthenticationManager 에게 위임받아서 실제적인 인증처리를 하는 클래스다.
+
+인증 처리를 완료하고 Authentication 객체를 실제로 만들어서 AuthenticationManager 에게 전달하는 처리를 한다. 
+
+예상했다시피 AuthenticationProvider 는 인터페이스고 제공해주는 메소드는 딱 두개다.
+
+- authenticate(): 실제 인증처리를 하는 메소드라고 생각하면 된다. 
+
+- support(): 해당 구현체가 이 Authentication 객체에 대해 인증처리를 할 수 있는지의 여부를 말하는 메소드다. 
+
+인증 과정은 UserDetailsService 로 부터 실제 사용자의 정보를 가지고 온다. 
+
+이때 검증을 위해 UserDetails 타입으로 사용자 정보를 가지고온다. 
+
+그 후 ID 검증, Password 검증, 사용자 계정 잠금 검증, 계정 비활성화 검증, 계정 만료 검증 등 다양한 검증을 한다. __(이 모든게 authenticate() 메소드안에서 이뤄지겠지.)__
+ 
+- ID 가 null 이라면 UserNotFoundException 이 발생한다. 
+
+- Password 가 다르다면 BadCredentialExcpetion 이 발생한다.
+
+- 그 외 검증은 각각에 맞는 예외가 있다. 
