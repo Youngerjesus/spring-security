@@ -58,6 +58,7 @@
 
 - [AuthenticationProvider](#AuthenticationProvider)
 
+- [인가 개념 및 필터 이해:Authorization, FilterSecurityInterceptor](#인가-개념-및-필터-이해:Authorization,-FilterSecurityInterceptor)
 ***
  
 ## 스프링 시큐리티 의존성이 추가되면 생기는 일 
@@ -676,3 +677,54 @@ AuthenticationManager 에게 위임받아서 실제적인 인증처리를 하는
 - Password 가 다르다면 BadCredentialExcpetion 이 발생한다.
 
 - 그 외 검증은 각각에 맞는 예외가 있다. 
+
+***
+
+## 인가 개념 및 필터 이해:Authorization, FilterSecurityInterceptor 
+
+Authorization 은 인가를 말한다. 
+
+인증을 성공한 후 너가 이 리소스 요청에 대한 적절한 권한이 있는지 검사하는 걸 말한다고 생각하면 된다.
+
+스프링 시큐리티가 지원하는 권한 계층은 크게 3가지가 있다. 이 3가지에 대한 인가 처리를 지원해준다. 
+
+- 웹 계층 
+
+  - URL 요청에 따른 보안 
+  
+- 서비스 계층 
+
+  - 화면 단위가 아닌 메소드 단위의 보안  
+  
+- 도메인 계층 
+
+  - 객체 단위의 레벨을 말한다. 
+  
+여기서는 웹 계층과 서비스 계층만 다루겠다. 
+
+### FilterSecurityInterceptor
+
+마지막에 위치한 필터로 인증된 사용자의 요청에 인가 처리를 해서 요청의 승인 여부를 결정하는 필터다. 
+
+인증 객체가 없이 이 필터 체인에 오면 AuthenticationException 이 발생한다. 
+
+인증 후 자원에 접근하는 권한이 없다면 AccessDeniedException 이 발생한다. 
+
+권한 제어 방식 중 HTTP 자원의 보안 처리를 하는 필터다. __(웹 계층과 관련된 보안 처리를 하네.)__
+
+이 필터에서 인가 처리는 AccessDecisionManager 에게 맡긴다. 
+
+FilterSecurityInterceptor 가 처리하는 플로우는 다음과 같다. 
+
+1. 먼저 SecurityContextHolder 에서 Authentication 객체가 있는지 확인한다. __(인증을 한 유저인지 확인한다.)__ 여기서 인증 객체가 없으면 AuthenticationException 이 발생한다. 
+이렇게 예외가 발생하면 ExceptionTranslationFilter 가 받아서 로그인 페이지로 이동하게 해서 인증 처리부터 하도록 오게 만든다.
+
+2. 인증 객체가 있다면 SecurityMetadataSource 가 해당 URI 에 대한 접근 권한이 뭐가 있느지를 가지고 온다. __(해당 URI 에 접근하기 위해 필요한 권한이 무엇인지를 가지고 오는 역할을 하는 클래스네.)__
+
+3. URI 에 대한 권한 정보가 null 이라면 누구라도 통과해도 된다는 뜻이므로 자원 접근을 허용해준다.
+
+4. URI 에 대한 권한 정보가 있다면 AccessDecisionManger 에게 전달을 해주고 인가 처리를 맡긴다. 
+
+5. AccessDecisionManager 는 내부적으로 인가 심사를 AccessDecisionVoter 에게 맡기게 되고 인가 통과 전략에 따라서 인가 처리를 마무리 한다. __(1명만 통과해도 되는지, 다수결인지, 만장일치인지. 이런 전략에 따라서 심사하는 걸 말한다.)__
+
+6. 심사에 통과하면 자원 접근을 허용하고 통과하지 못하면 AccessDeniedException 을 발생시키고 ExceptionTranslationFilter 에게 전달해주는 역할을 한다. 
