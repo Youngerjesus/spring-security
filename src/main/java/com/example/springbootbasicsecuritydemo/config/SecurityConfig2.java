@@ -6,8 +6,8 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
-@Configuration
-@Order(1)
+//@Configuration
+//@Order(1)
 public class SecurityConfig2 extends WebSecurityConfigurerAdapter {
 
     @Override
