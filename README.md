@@ -59,6 +59,9 @@
 - [AuthenticationProvider](#AuthenticationProvider)
 
 - [인가 개념 및 필터 이해:Authorization, FilterSecurityInterceptor](#인가-개념-및-필터-이해:Authorization,-FilterSecurityInterceptor)
+
+- [인가 결정 심의자: AccessDeniedManager, AccessDecisionVoter](#인가-결정-심의자:-AccessDeniedManager,-AccessDecisionVoter)
+
 ***
  
 ## 스프링 시큐리티 의존성이 추가되면 생기는 일 
@@ -728,3 +731,59 @@ FilterSecurityInterceptor 가 처리하는 플로우는 다음과 같다.
 5. AccessDecisionManager 는 내부적으로 인가 심사를 AccessDecisionVoter 에게 맡기게 되고 인가 통과 전략에 따라서 인가 처리를 마무리 한다. __(1명만 통과해도 되는지, 다수결인지, 만장일치인지. 이런 전략에 따라서 심사하는 걸 말한다.)__
 
 6. 심사에 통과하면 자원 접근을 허용하고 통과하지 못하면 AccessDeniedException 을 발생시키고 ExceptionTranslationFilter 에게 전달해주는 역할을 한다. 
+
+***
+
+## 인가 결정 심의자: AccessDeniedManager, AccessDecisionVoter
+
+AccessDecisionManager 는 인증정보, 권한정보, 요청정보를 이용해서 사용자의 자원 접근을 허용할 것인지 거부할 것인지 최종적으로 판단하는 클래스다. 
+
+AccessDecisionManager 는 여러 개의 Voter 들을 가질 수 있고 Voter 들로부터 자원 접근에 허용, 거부, 보류에 해당하는 값을 받아서 판단을 한다. 
+
+기본적으로 AccessDecisionManager 는 3가지 종류의 타입이 있고 승인을 허용하는 전략에 따라서 다르다.
+
+- AffirmativeBased
+
+  - 여러개의 Voter 들 중에서 하나만 승락해도 요청을 허용해주는 클래스다.
+  
+- ConsensusBased
+
+  - 다수표를 통해서 최종 결정을 판단한다.
+  
+  - 동률일 경우 default 는 허용이다. 그치만 allowIfEqualGrantedDeniedDecision 값을 바꿔서 false 로 바꾸면 허용하지 않는다. 
+  
+- UnanimousBased
+
+  - 만장일치를 통해서 결정을 한다.
+  
+### AccessDecisionVoter 
+
+판단을 심사하는 역할을 한다. 
+
+Voter 가 권한 부여 과정에서 판단하는 자료는 3가지다. 
+
+- Authentication
+
+  - 인증 정보를 말한다. 
+
+- FilterInvocation
+
+  - 요청 정보를 말한다. (antMatcher("/user")) 
+  
+- ConfigAttributes
+
+  - 권한 정보를 말한다. (hasRole("USER"))
+  
+결정 방식은 다음과 같다. 
+
+- ACCESS.GRANTED 
+
+  - 접근 허용(1)
+
+- ACCESS.DENIED
+
+  - 접근 거부(-1)
+  
+- ACCESS.ABSTAIN
+
+  - 접근 보류(0)
