@@ -1,5 +1,6 @@
 package com.example.springbootbasicsecuritydemo.config;
 
+import com.example.springbootbasicsecuritydemo.account.AccountService;
 import com.example.springbootbasicsecuritydemo.provider.CustomAuthProvider;
 import com.example.springbootbasicsecuritydemo.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     CustomUserDetailsService customUserDetailsService;
 
+    @Autowired
+    AccountService accountService;
+
     @Override
     public void configure(WebSecurity web) {
         web.ignoring().requestMatchers(PathRequest.toStaticResources().atCommonLocations());
@@ -53,10 +57,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.authenticationProvider(customAuthProvider);
-//        auth.userDetailsService(customUserDetailsService);
-        auth.inMemoryAuthentication().withUser("user").password("{noop}1234").roles("USER");
-        auth.inMemoryAuthentication().withUser("sys").password("{noop}1234").roles("SYS");
-        auth.inMemoryAuthentication().withUser("admin").password("{noop}1234").roles("ADMIN","SYS","USER");
+        auth.userDetailsService(accountService);
+//        auth.inMemoryAuthentication().withUser("user").password("{noop}1234").roles("USER");
+//        auth.inMemoryAuthentication().withUser("sys").password("{noop}1234").roles("SYS");
+//        auth.inMemoryAuthentication().withUser("admin").password("{noop}1234").roles("ADMIN","SYS","USER");
     }
 
     @Override
@@ -122,6 +126,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http
                 .authorizeRequests()
+                .antMatchers("/account/**").permitAll()
                 .antMatchers("/login").permitAll()
                 .antMatchers("/user").hasRole("USER")
                 .antMatchers("/admin/pay").hasRole("ADMIN")
